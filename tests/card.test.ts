@@ -52,6 +52,14 @@ describe("mower-status-card", () => {
         expect(() => element.setConfig({ type: "custom:mower-status-card", entity: "sensor.matti_battery" })).toThrow();
     });
 
+    it("shows its picker stub with no lawn mower as a hint", async () => {
+        const state = { ...mockHass(), states: {}, entities: {} };
+        const stub = (customElements.get("mower-status-card") as unknown as typeof MowerStatusCard).getStubConfig(state);
+        expect(stub).toEqual({ entity: "" });
+        const element = await card(state, stub as Partial<MowerStatusCardConfig>);
+        expect(root(element).querySelector(".message")?.textContent?.trim()).toBe(translate("fi", "common.no_mower"));
+    });
+
     it("refuses a height that isn't a positive number of pixels, and an unknown height mode, with an error about the height", () => {
         const element = document.createElement("mower-status-card");
         const config = (extra: Record<string, unknown>) =>

@@ -1,4 +1,4 @@
-/*! mower-status-card 1.2.1 | MIT License */
+/*! mower-status-card 1.2.2 | MIT License */
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __decorateClass = (decorators, target, key, kind) => {
@@ -604,7 +604,7 @@ function r5(r6) {
 }
 
 // src/const.ts
-var CARD_VERSION = "1.2.1";
+var CARD_VERSION = "1.2.2";
 var ERROR_FRESH_MS = 24 * 36e5;
 var HISTORY_DAYS = 10;
 var TICK_MS = 6e4;
@@ -722,6 +722,7 @@ var en_default = {
     invalid_height: "Invalid height. height and max_height must be positive numbers of pixels, and height_mode auto, fixed or max.",
     invalid_row_step: "Invalid rounding. row_step must be full or half.",
     no_entity: "Entity {entity} not found",
+    no_mower: "No lawn mower yet. Choose one in the card's settings.",
     unavailable: "Unavailable",
     charging: "charging",
     battery: "battery",
@@ -835,6 +836,7 @@ var fi_default = {
     invalid_height: "Virheellinen korkeus. Korkeuksien (height ja max_height) on oltava positiivisia lukuja pikselein\xE4, ja korkeustilan (height_mode) auto, fixed tai max.",
     invalid_row_step: "Virheellinen py\xF6ristys. Py\xF6ristyksen (row_step) on oltava full tai half.",
     no_entity: "Entiteetti\xE4 {entity} ei l\xF6ydy",
+    no_mower: "Ei viel\xE4 ruohonleikkuria. Valitse leikkuri kortin asetuksista.",
     unavailable: "Ei saatavilla",
     charging: "lataa",
     battery: "akku",
@@ -1670,7 +1672,7 @@ var MowerStatusCard = class extends i4 {
     return { entity: Object.keys(hass?.states ?? {}).find((id) => domain(id) === "lawn_mower") ?? "" };
   }
   setConfig(config) {
-    if (!config || typeof config.entity !== "string" || domain(config.entity) !== "lawn_mower") {
+    if (!config || typeof config.entity !== "string" || config.entity !== "" && domain(config.entity) !== "lawn_mower") {
       throw new Error(translate(browserLanguage(), "common.invalid_configuration"));
     }
     if (!validHeight(config)) {
@@ -1951,8 +1953,9 @@ var MowerStatusCard = class extends i4 {
     }
     const mower = this.hass.states[this.config.entity];
     if (!mower) {
+      const message = this.config.entity ? this.text("common.no_entity", { entity: this.config.entity }) : this.text("common.no_mower");
       return b2`<ha-card style=${this.cardStyle()}>
-                <div class="message">${this.text("common.no_entity", { entity: this.config.entity })}</div>
+                <div class="message">${message}</div>
             </ha-card>`;
     }
     const unavailable = this.activity === "unavailable";

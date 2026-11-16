@@ -6,6 +6,7 @@
         "invalid_height": "Invalid height. height and max_height must be positive numbers of pixels, and height_mode auto, fixed or max.",
         "invalid_row_step": "Invalid rounding. row_step must be full or half.",
         "no_entity": "Entity {entity} not found",
+        "no_mower": "No lawn mower yet. Choose one in the card's settings.",
         "unavailable": "Unavailable",
         "charging": "charging",
         "battery": "battery",

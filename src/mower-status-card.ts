@@ -208,7 +208,8 @@ export class MowerStatusCard extends LitElement {
     }
 
     public setConfig(config: MowerStatusCardConfig): void {
-        if (!config || typeof config.entity !== "string" || domain(config.entity) !== "lawn_mower") {
+        // An empty entity is the picker's stub when there is no lawn mower yet, and the card says so.
+        if (!config || typeof config.entity !== "string" || (config.entity !== "" && domain(config.entity) !== "lawn_mower")) {
             throw new Error(translate(browserLanguage(), "common.invalid_configuration"));
         }
         if (!validHeight(config)) {
@@ -546,8 +547,11 @@ export class MowerStatusCard extends LitElement {
         }
         const mower = this.hass.states[this.config.entity];
         if (!mower) {
+            const message = this.config.entity
+                ? this.text("common.no_entity", { entity: this.config.entity })
+                : this.text("common.no_mower");
             return html`<ha-card style=${this.cardStyle()}>
-                <div class="message">${this.text("common.no_entity", { entity: this.config.entity })}</div>
+                <div class="message">${message}</div>
             </ha-card>`;
         }
         const unavailable = this.activity === "unavailable";
