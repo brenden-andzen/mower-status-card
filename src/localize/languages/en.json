@@ -2,7 +2,7 @@
     "common": {
         "name": "Mower status",
         "description": "A robotic lawn mower's state, battery, the task under way, its problems and its buttons",
-        "invalid_configuration": "Invalid configuration. Choose a lawn mower.",
+        "invalid_configuration": "Invalid configuration. Choose a lawn mower or a cleaner.",
         "invalid_height": "Invalid height. height and max_height must be positive numbers of pixels, and height_mode auto, fixed or max.",
         "invalid_row_step": "Invalid rounding. row_step must be full or half.",
         "no_entity": "Entity {entity} not found",
@@ -19,7 +19,9 @@
         "progress_done": "{progress} done",
         "last_mowed": "Last mowed {when}",
         "last_mowed_long_ago": "Last mowed over {days} days ago",
-        "mileage": "{value} in total"
+        "mileage": "{value} in total",
+        "last_mowed_vacuum": "Last cleaned {when}",
+        "last_mowed_long_ago_vacuum": "Last cleaned over {days} days ago"
     },
     "when": {
         "today": "today",
@@ -41,7 +43,14 @@
         "cancel_confirm": "Cancel the unfinished task?",
         "stop": "Stop",
         "stop_confirm": "Stop the mower?",
-        "dock": "Dock"
+        "dock": "Dock",
+        "continue_cleaning": "Continue cleaning",
+        "start_cleaning": "Start cleaning",
+        "stop_confirm_vacuum": "Stop the cleaner?"
+    },
+    "mode": {
+        "label": "Cleaning mode",
+        "start_confirm": "Start cleaning in {mode} mode?"
     },
     "notice": {
         "error": "Error",
@@ -61,7 +70,7 @@
         "update_text": "Firmware {latest} is available. {installed} is installed now."
     },
     "editor": {
-        "entity": "Lawn mower",
+        "entity": "Lawn mower or cleaner",
         "name": "Name",
         "name_helper": "Replaces the device's name",
         "picture": "Picture",

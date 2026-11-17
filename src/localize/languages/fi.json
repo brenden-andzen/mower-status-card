@@ -2,7 +2,7 @@
     "common": {
         "name": "Ruohonleikkurin tila",
         "description": "Robottiruohonleikkurin tila, akku, käynnissä oleva tehtävä, ongelmat ja painikkeet",
-        "invalid_configuration": "Virheellinen konfiguraatio. Valitse ruohonleikkuri.",
+        "invalid_configuration": "Virheellinen konfiguraatio. Valitse ruohonleikkuri tai puhdistusrobotti.",
         "invalid_height": "Virheellinen korkeus. Korkeuksien (height ja max_height) on oltava positiivisia lukuja pikseleinä, ja korkeustilan (height_mode) auto, fixed tai max.",
         "invalid_row_step": "Virheellinen pyöristys. Pyöristyksen (row_step) on oltava full tai half.",
         "no_entity": "Entiteettiä {entity} ei löydy",
@@ -19,7 +19,9 @@
         "progress_done": "{progress} tehty",
         "last_mowed": "Leikkasi viimeksi {when}",
         "last_mowed_long_ago": "Leikkasi viimeksi yli {days} päivää sitten",
-        "mileage": "{value} yhteensä"
+        "mileage": "{value} yhteensä",
+        "last_mowed_vacuum": "Puhdisti viimeksi {when}",
+        "last_mowed_long_ago_vacuum": "Puhdisti viimeksi yli {days} päivää sitten"
     },
     "when": {
         "today": "tänään",
@@ -41,7 +43,14 @@
         "cancel_confirm": "Perutaanko keskeneräinen tehtävä?",
         "stop": "Pysäytä",
         "stop_confirm": "Pysäytetäänkö ruohonleikkuri?",
-        "dock": "Telakkaan"
+        "dock": "Telakkaan",
+        "continue_cleaning": "Jatka puhdistusta",
+        "start_cleaning": "Aloita puhdistus",
+        "stop_confirm_vacuum": "Pysäytetäänkö puhdistusrobotti?"
+    },
+    "mode": {
+        "label": "Puhdistustila",
+        "start_confirm": "Aloitetaanko puhdistus tilassa {mode}?"
     },
     "notice": {
         "error": "Virhe",
@@ -61,7 +70,7 @@
         "update_text": "Laiteohjelmisto {latest} on saatavilla. Nyt käytössä on {installed}."
     },
     "editor": {
-        "entity": "Ruohonleikkuri",
+        "entity": "Ruohonleikkuri tai puhdistusrobotti",
         "name": "Nimi",
         "name_helper": "Korvaa laitteen nimen",
         "picture": "Kuva",

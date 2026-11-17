@@ -40,6 +40,8 @@ export interface HomeAssistant {
     /** A text from Home Assistant's translations by its key, or "" when there is none. */
     localize: (key: string) => string;
     callWS: <T>(message: Record<string, unknown>) => Promise<T>;
+    /** An attribute's value in the user's language, such as a vacuum's fan speed. Older frontends don't have it. */
+    formatEntityAttributeValue?: (entity: HassEntity, attribute: string, value?: unknown) => string;
     /** An entity's name as Home Assistant composes it from the parts given. Older frontends don't have it. */
     formatEntityName?: (entity: HassEntity, parts: Array<{ type: "entity" | "device" | "area" | "floor" }>) => string;
 }

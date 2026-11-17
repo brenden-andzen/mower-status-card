@@ -26,7 +26,7 @@ const DEFAULTS: Record<string, unknown> = {
 
 function mainSchema(config: MowerStatusCardConfig, mammotion: boolean, text: (key: string) => string) {
     return [
-        { name: "entity", required: true, selector: { entity: { domain: "lawn_mower" } } },
+        { name: "entity", required: true, selector: { entity: { domain: ["lawn_mower", "vacuum"] } } },
         { name: "name", selector: { text: {} } },
         {
             type: "expandable",

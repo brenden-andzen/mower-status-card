@@ -613,6 +613,61 @@ var FEATURE_PAUSE = 2;
 var FEATURE_DOCK = 4;
 var FEATURE_STOP = 8;
 var MAMMOTION_ASSETS = "/hacsfiles/ha-mammotion-assets/dist/assets";
+var VACUUM_PAUSE = 4;
+var VACUUM_STOP = 8;
+var VACUUM_RETURN_HOME = 16;
+var VACUUM_FAN_SPEED = 32;
+var VACUUM_START = 8192;
+
+// src/device.ts
+var ROBOT_DOMAINS = ["lawn_mower", "vacuum"];
+var SERVICES = {
+  lawn_mower: {
+    start: "lawn_mower.start_mowing",
+    pause: "lawn_mower.pause",
+    dock: "lawn_mower.dock",
+    stop: "lawn_mower.stop"
+  },
+  vacuum: {
+    start: "vacuum.start",
+    pause: "vacuum.pause",
+    dock: "vacuum.return_to_base",
+    stop: "vacuum.stop"
+  }
+};
+function domainOf(entityId) {
+  return entityId.split(".")[0];
+}
+function isRobot(entityId) {
+  return ROBOT_DOMAINS.includes(domainOf(entityId));
+}
+function isVacuum(entityId) {
+  return domainOf(entityId) === "vacuum";
+}
+function featuresOf(entity) {
+  const raw = Number(entity.attributes.supported_features ?? 0);
+  if (!isVacuum(entity.entity_id)) {
+    return raw;
+  }
+  return (raw & VACUUM_START ? FEATURE_START_MOWING : 0) | (raw & VACUUM_PAUSE ? FEATURE_PAUSE : 0) | (raw & VACUUM_RETURN_HOME ? FEATURE_DOCK : 0) | (raw & VACUUM_STOP ? FEATURE_STOP : 0);
+}
+function serviceFor(entityId, action) {
+  return (SERVICES[domainOf(entityId)] ?? SERVICES.lawn_mower)[action];
+}
+function modesOf(entity, hidden = []) {
+  if (!isVacuum(entity.entity_id) || !(Number(entity.attributes.supported_features ?? 0) & VACUUM_FAN_SPEED)) {
+    return null;
+  }
+  const raw = entity.attributes.fan_speed_list;
+  const list = (Array.isArray(raw) ? raw : []).filter(
+    (mode) => typeof mode === "string" && mode !== "" && !hidden.includes(mode)
+  );
+  if (list.length < 2) {
+    return null;
+  }
+  const speed = entity.attributes.fan_speed;
+  return { list, current: typeof speed === "string" && list.includes(speed) ? speed : null };
+}
 
 // src/height.ts
 var HEIGHT_MODES = ["auto", "fixed", "max"];
@@ -718,7 +773,7 @@ var en_default = {
   common: {
     name: "Mower status",
     description: "A robotic lawn mower's state, battery, the task under way, its problems and its buttons",
-    invalid_configuration: "Invalid configuration. Choose a lawn mower.",
+    invalid_configuration: "Invalid configuration. Choose a lawn mower or a cleaner.",
     invalid_height: "Invalid height. height and max_height must be positive numbers of pixels, and height_mode auto, fixed or max.",
     invalid_row_step: "Invalid rounding. row_step must be full or half.",
     no_entity: "Entity {entity} not found",
@@ -735,7 +790,9 @@ var en_default = {
     progress_done: "{progress} done",
     last_mowed: "Last mowed {when}",
     last_mowed_long_ago: "Last mowed over {days} days ago",
-    mileage: "{value} in total"
+    mileage: "{value} in total",
+    last_mowed_vacuum: "Last cleaned {when}",
+    last_mowed_long_ago_vacuum: "Last cleaned over {days} days ago"
   },
   when: {
     today: "today",
@@ -757,7 +814,14 @@ var en_default = {
     cancel_confirm: "Cancel the unfinished task?",
     stop: "Stop",
     stop_confirm: "Stop the mower?",
-    dock: "Dock"
+    dock: "Dock",
+    continue_cleaning: "Continue cleaning",
+    start_cleaning: "Start cleaning",
+    stop_confirm_vacuum: "Stop the cleaner?"
+  },
+  mode: {
+    label: "Cleaning mode",
+    start_confirm: "Start cleaning in {mode} mode?"
   },
   notice: {
     error: "Error",
@@ -777,7 +841,7 @@ var en_default = {
     update_text: "Firmware {latest} is available. {installed} is installed now."
   },
   editor: {
-    entity: "Lawn mower",
+    entity: "Lawn mower or cleaner",
     name: "Name",
     name_helper: "Replaces the device's name",
     picture: "Picture",
@@ -832,7 +896,7 @@ var fi_default = {
   common: {
     name: "Ruohonleikkurin tila",
     description: "Robottiruohonleikkurin tila, akku, k\xE4ynniss\xE4 oleva teht\xE4v\xE4, ongelmat ja painikkeet",
-    invalid_configuration: "Virheellinen konfiguraatio. Valitse ruohonleikkuri.",
+    invalid_configuration: "Virheellinen konfiguraatio. Valitse ruohonleikkuri tai puhdistusrobotti.",
     invalid_height: "Virheellinen korkeus. Korkeuksien (height ja max_height) on oltava positiivisia lukuja pikselein\xE4, ja korkeustilan (height_mode) auto, fixed tai max.",
     invalid_row_step: "Virheellinen py\xF6ristys. Py\xF6ristyksen (row_step) on oltava full tai half.",
     no_entity: "Entiteetti\xE4 {entity} ei l\xF6ydy",
@@ -849,7 +913,9 @@ var fi_default = {
     progress_done: "{progress} tehty",
     last_mowed: "Leikkasi viimeksi {when}",
     last_mowed_long_ago: "Leikkasi viimeksi yli {days} p\xE4iv\xE4\xE4 sitten",
-    mileage: "{value} yhteens\xE4"
+    mileage: "{value} yhteens\xE4",
+    last_mowed_vacuum: "Puhdisti viimeksi {when}",
+    last_mowed_long_ago_vacuum: "Puhdisti viimeksi yli {days} p\xE4iv\xE4\xE4 sitten"
   },
   when: {
     today: "t\xE4n\xE4\xE4n",
@@ -871,7 +937,14 @@ var fi_default = {
     cancel_confirm: "Perutaanko keskener\xE4inen teht\xE4v\xE4?",
     stop: "Pys\xE4yt\xE4",
     stop_confirm: "Pys\xE4ytet\xE4\xE4nk\xF6 ruohonleikkuri?",
-    dock: "Telakkaan"
+    dock: "Telakkaan",
+    continue_cleaning: "Jatka puhdistusta",
+    start_cleaning: "Aloita puhdistus",
+    stop_confirm_vacuum: "Pys\xE4ytet\xE4\xE4nk\xF6 puhdistusrobotti?"
+  },
+  mode: {
+    label: "Puhdistustila",
+    start_confirm: "Aloitetaanko puhdistus tilassa {mode}?"
   },
   notice: {
     error: "Virhe",
@@ -891,7 +964,7 @@ var fi_default = {
     update_text: "Laiteohjelmisto {latest} on saatavilla. Nyt k\xE4yt\xF6ss\xE4 on {installed}."
   },
   editor: {
-    entity: "Ruohonleikkuri",
+    entity: "Ruohonleikkuri tai puhdistusrobotti",
     name: "Nimi",
     name_helper: "Korvaa laitteen nimen",
     picture: "Kuva",
@@ -1018,6 +1091,7 @@ var GENERIC = {
   update: (entity) => domain(entity.entity_id) === "update"
 };
 var STANDARD_STATES = /* @__PURE__ */ new Set(["mowing", "docked", "paused", "returning", "idle", "error", "unavailable", "unknown"]);
+var VACUUM = { slots: {}, states: { cleaning: "mowing" } };
 var PRESETS = {
   mammotion: {
     slots: {
@@ -1038,6 +1112,17 @@ var PRESETS = {
       continue: "continue_last_job",
       cancel: "cancel_task"
     }
+  },
+  // Mammotion's Spino pool cleaners. The vacuum's fan speeds are its cleaning modes, translated by its work mode sensor.
+  mammotion_vacuum: {
+    slots: {
+      battery: "spino_battery",
+      error: "spino_error_message",
+      error_time: "spino_error_time",
+      update: "update"
+    },
+    modeLabels: "sensor.spino_work_mode",
+    hiddenModes: ["RECHARGE", "OFF", "UNKNOWN"]
   },
   sunseeker: {
     slots: {
@@ -1076,7 +1161,12 @@ var PRESETS = {
   }
 };
 function presetOf(hass, mower) {
-  return PRESETS[platformOf(hass, mower) ?? ""];
+  const platform = platformOf(hass, mower) ?? "";
+  if (!isVacuum(mower)) {
+    return PRESETS[platform];
+  }
+  const own = platform ? PRESETS[`${platform}_vacuum`] : void 0;
+  return own ? { ...VACUUM, ...own, states: { ...VACUUM.states, ...own.states } } : VACUUM;
 }
 function activityOf(preset, state) {
   return preset?.states?.[state] ?? (STANDARD_STATES.has(state) ? state : preset?.otherStates ?? state);
@@ -1146,7 +1236,7 @@ var DEFAULTS = {
 };
 function mainSchema(config, mammotion, text) {
   return [
-    { name: "entity", required: true, selector: { entity: { domain: "lawn_mower" } } },
+    { name: "entity", required: true, selector: { entity: { domain: ["lawn_mower", "vacuum"] } } },
     { name: "name", selector: { text: {} } },
     {
       type: "expandable",
@@ -1667,12 +1757,13 @@ var MowerStatusCard = class extends i4 {
   static getConfigElement() {
     return document.createElement("mower-status-card-editor");
   }
-  /** Offers the first lawn mower there is when the card is added from the picker. */
+  /** Offers the first lawn mower there is when the card is added from the picker, or else the first vacuum. */
   static getStubConfig(hass) {
-    return { entity: Object.keys(hass?.states ?? {}).find((id) => domain(id) === "lawn_mower") ?? "" };
+    const ids = Object.keys(hass?.states ?? {});
+    return { entity: ids.find((id) => domain(id) === "lawn_mower") ?? ids.find((id) => domain(id) === "vacuum") ?? "" };
   }
   setConfig(config) {
-    if (!config || typeof config.entity !== "string" || config.entity !== "" && domain(config.entity) !== "lawn_mower") {
+    if (!config || typeof config.entity !== "string" || config.entity !== "" && !isRobot(config.entity)) {
       throw new Error(translate(browserLanguage(), "common.invalid_configuration"));
     }
     if (!validHeight(config)) {
@@ -1794,7 +1885,7 @@ var MowerStatusCard = class extends i4 {
     const fixed = px(style.paddingLeft) + px(style.paddingRight) + MAIN_ICON_PX + px(style.columnGap);
     context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
     context.letterSpacing = style.letterSpacing === "normal" ? "0px" : style.letterSpacing;
-    const features = Number(mower.attributes.supported_features ?? 0);
+    const features = featuresOf(mower);
     const actions = [mainAction("mowing", features), "continue", "start"];
     return actions.some(
       (action) => !buttonsFit(width, fixed, context.measureText(this.text(this.mainLabel(action))).width, this.iconButtons(features, action))
@@ -1966,7 +2057,7 @@ var MowerStatusCard = class extends i4 {
                 lang=${this.language()}
             >
                 ${this.picture ? this.pictureLayout(mower) : this.gaugeLayout(mower)}
-                <div class="notices">${this.chips()}</div>
+                <div class="notices">${this.modes(mower)}${this.chips()}</div>
                 ${this.buttons(mower)} ${this.picture ? this.footer() : A}
             </ha-card>
         `;
@@ -2146,7 +2237,7 @@ var MowerStatusCard = class extends i4 {
   /** The big button, then Cancel and Dock as icons. A button the mower can't use is left out, one it can't use now is greyed. */
   buttons(mower) {
     const unavailable = this.activity === "unavailable";
-    const features = Number(mower.attributes.supported_features ?? 0);
+    const features = featuresOf(mower);
     const main = mainAction(this.activity, features);
     const mainParts = {
       pause: { icon: "mdi:pause", enabled: !!(features & FEATURE_PAUSE) },
@@ -2166,14 +2257,16 @@ var MowerStatusCard = class extends i4 {
     ) : features & FEATURE_STOP ? this.stopButton(
       "stop",
       unavailable,
-      () => this.perform("lawn_mower.stop", this.config.entity, { text: this.text("action.stop_confirm") })
+      () => this.perform(this.service("stop"), this.config.entity, {
+        text: this.text(this.robotKey("action.stop_confirm"))
+      })
     ) : A}
                 ${features & FEATURE_DOCK && main !== "dock" ? b2`<button
                               class="button icon"
                               title=${this.text("action.dock")}
                               aria-label=${this.text("action.dock")}
                               ?disabled=${unavailable || this.activity === "docked" || this.charging()}
-                              @click=${() => this.perform("lawn_mower.dock", this.config.entity)}
+                              @click=${() => this.perform(this.service("dock"), this.config.entity)}
                           >
                               <ha-icon icon="mdi:home-import-outline"></ha-icon>
                           </button>` : A}
@@ -2195,25 +2288,89 @@ var MowerStatusCard = class extends i4 {
             <ha-icon icon="mdi:stop"></ha-icon>
         </button>`;
   }
-  /** A mower with a continue button of its own works in tasks, as Mammotion's do. Any other just mows. */
+  /** A mower with a continue button of its own works in tasks, as Mammotion's do. Any other just mows, or cleans. */
   mainLabel(action) {
-    return action === "pause" || action === "dock" || this.slots.continue ? `action.${action}` : `action.${action}_mowing`;
+    if (action === "pause" || action === "dock" || this.slots.continue) {
+      return `action.${action}`;
+    }
+    return isVacuum(this.config?.entity ?? "") ? `action.${action}_cleaning` : `action.${action}_mowing`;
   }
   main(action) {
     const mower = this.config.entity;
     if (action === "pause") {
-      this.perform("lawn_mower.pause", mower);
+      this.perform(this.service("pause"), mower);
     } else if (action === "dock") {
-      this.perform("lawn_mower.dock", mower);
+      this.perform(this.service("dock"), mower);
     } else if (action === "continue" && this.slots.continue) {
       this.perform("button.press", this.slots.continue);
     } else {
-      this.perform("lawn_mower.start_mowing", mower);
+      this.perform(this.service("start"), mower);
     }
   }
+  /** The action for the card's lawn mower or vacuum. */
+  service(action) {
+    return serviceFor(this.config.entity, action);
+  }
+  /** A text's key for the kind of robot: the cleaner's own where a vacuum's text differs, as "Last cleaned" does. */
+  robotKey(key) {
+    return isVacuum(this.config?.entity ?? "") ? `${key}_vacuum` : key;
+  }
+  /**
+   * A vacuum's cleaning modes as buttons, such as the Spino's Floor, Wall and Waterline. The mode it cleans in now is
+   * lit. Choosing a mode cleans in it, so the cleaner asks first when it isn't already cleaning.
+   */
+  modes(mower) {
+    const modes = modesOf(mower, this.preset?.hiddenModes);
+    if (!modes) {
+      return A;
+    }
+    const unavailable = this.activity === "unavailable";
+    const cleaning = this.activity === "mowing";
+    return b2`<div class="modes" role="group" aria-label=${this.text("mode.label")}>
+            ${modes.list.map((mode) => {
+      const active = cleaning && mode === modes.current;
+      const label = this.modeLabel(mower, mode);
+      return b2`<button
+                    class="mode ${active ? "active" : ""}"
+                    aria-pressed=${active}
+                    ?disabled=${unavailable}
+                    @click=${() => {
+        if (!active) {
+          this.perform(
+            "vacuum.set_fan_speed",
+            mower.entity_id,
+            cleaning ? void 0 : { text: this.text("mode.start_confirm", { mode: label }) },
+            { fan_speed: mode }
+          );
+        }
+      }}
+                >
+                    ${label}
+                </button>`;
+    })}
+        </div>`;
+  }
+  /** A mode in words: Home Assistant's for the vacuum's fan speed, the integration's own, or the mode's name tidied. */
+  modeLabel(mower, mode) {
+    const own = this.hass.formatEntityAttributeValue?.(mower, "fan_speed", mode);
+    if (own && own !== mode) {
+      return own;
+    }
+    const source = this.preset?.modeLabels;
+    const platform = platformOf(this.hass, mower.entity_id);
+    const word = source && platform ? this.hass.localize(`component.${platform}.entity.${source}.state.${mode}`) : "";
+    if (word) {
+      return word;
+    }
+    const tidy = mode.replace(/_/g, " ").toLocaleLowerCase(this.language());
+    return tidy.charAt(0).toLocaleUpperCase(this.language()) + tidy.slice(1);
+  }
   /** Through Home Assistant's own action handling, so a confirmation is its own dialog. */
-  perform(service, entityId, confirmation) {
+  perform(service, entityId, confirmation, data) {
     const tapAction = { action: "perform-action", perform_action: service, target: { entity_id: entityId } };
+    if (data) {
+      tapAction.data = data;
+    }
     if (confirmation) {
       tapAction.confirmation = confirmation;
     }
@@ -2348,10 +2505,10 @@ var MowerStatusCard = class extends i4 {
       return null;
     }
     if ("end" in this.lastMowed) {
-      return this.markup("common.last_mowed", { when: this.whenMarkup(this.lastMowed.end) });
+      return this.markup(this.robotKey("common.last_mowed"), { when: this.whenMarkup(this.lastMowed.end) });
     }
     const days = Math.floor((Date.now() - this.lastMowed.since) / 864e5);
-    return days >= 2 ? this.text("common.last_mowed_long_ago", { days: String(days) }) : null;
+    return days >= 2 ? this.text(this.robotKey("common.last_mowed_long_ago"), { days: String(days) }) : null;
   }
   /** A moment as its day ("tänään", "ke 14.10.") and its time ("klo 15.18"), in the viewer's language. */
   whenParts(time) {
@@ -2754,6 +2911,40 @@ var MowerStatusCard = class extends i4 {
                     flex-wrap: wrap;
                     gap: 6px;
                     margin-top: 12px;
+                }
+
+                /* A vacuum's cleaning modes: quiet outlines, the mode it cleans in now filled. */
+                .modes {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                    margin-top: 12px;
+                }
+
+                .mode {
+                    padding: 5px 12px;
+                    border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
+                    border-radius: 999px;
+                    font-size: 13px;
+                    line-height: 18px;
+                    color: var(--primary-text-color);
+                }
+
+                .mode.active {
+                    border-color: var(--primary-color);
+                    background: var(--primary-color);
+                    color: var(--text-primary-color, #fff);
+                    cursor: default;
+                }
+
+                .mode:disabled {
+                    opacity: 0.5;
+                    cursor: default;
+                }
+
+                .mode:focus-visible {
+                    outline: 2px solid var(--primary-color);
+                    outline-offset: 2px;
                 }
 
                 .chip {

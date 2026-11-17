@@ -19,6 +19,8 @@ import {
     MAMMOTION_ASSETS,
     TICK_MS,
 } from "./const";
+import { featuresOf, isRobot, isVacuum, modesOf, serviceFor } from "./device";
+import type { RobotAction } from "./device";
 import "./editor";
 import { ScrollFade, fadeStyles } from "./fade";
 import { besideFits, besideNoTaller, buttonsFit } from "./fit";
@@ -92,6 +94,7 @@ interface Action {
     action: "perform-action";
     perform_action: string;
     target: { entity_id: string };
+    data?: Record<string, unknown>;
     confirmation?: { text: string };
 }
 
@@ -202,14 +205,15 @@ export class MowerStatusCard extends LitElement {
         return document.createElement("mower-status-card-editor");
     }
 
-    /** Offers the first lawn mower there is when the card is added from the picker. */
+    /** Offers the first lawn mower there is when the card is added from the picker, or else the first vacuum. */
     public static getStubConfig(hass?: HomeAssistant): Record<string, unknown> {
-        return { entity: Object.keys(hass?.states ?? {}).find((id) => domain(id) === "lawn_mower") ?? "" };
+        const ids = Object.keys(hass?.states ?? {});
+        return { entity: ids.find((id) => domain(id) === "lawn_mower") ?? ids.find((id) => domain(id) === "vacuum") ?? "" };
     }
 
     public setConfig(config: MowerStatusCardConfig): void {
         // An empty entity is the picker's stub when there is no lawn mower yet, and the card says so.
-        if (!config || typeof config.entity !== "string" || (config.entity !== "" && domain(config.entity) !== "lawn_mower")) {
+        if (!config || typeof config.entity !== "string" || (config.entity !== "" && !isRobot(config.entity))) {
             throw new Error(translate(browserLanguage(), "common.invalid_configuration"));
         }
         if (!validHeight(config)) {
@@ -354,7 +358,7 @@ export class MowerStatusCard extends LitElement {
         // Chrome leaves the computed font shorthand empty, which a canvas ignores, keeping its own 10 px font.
         context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
         context.letterSpacing = style.letterSpacing === "normal" ? "0px" : style.letterSpacing;
-        const features = Number(mower.attributes.supported_features ?? 0);
+        const features = featuresOf(mower);
         const actions: MainAction[] = [mainAction("mowing", features), "continue", "start"];
         return actions.some(
             (action) =>
@@ -562,7 +566,7 @@ export class MowerStatusCard extends LitElement {
                 lang=${this.language()}
             >
                 ${this.picture ? this.pictureLayout(mower) : this.gaugeLayout(mower)}
-                <div class="notices">${this.chips()}</div>
+                <div class="notices">${this.modes(mower)}${this.chips()}</div>
                 ${this.buttons(mower)} ${this.picture ? this.footer() : nothing}
             </ha-card>
         `;
@@ -799,7 +803,7 @@ export class MowerStatusCard extends LitElement {
     /** The big button, then Cancel and Dock as icons. A button the mower can't use is left out, one it can't use now is greyed. */
     private buttons(mower: HassEntity): TemplateResult {
         const unavailable = this.activity === "unavailable";
-        const features = Number(mower.attributes.supported_features ?? 0);
+        const features = featuresOf(mower);
         const main = mainAction(this.activity, features);
         const mainParts = {
             pause: { icon: "mdi:pause", enabled: !!(features & FEATURE_PAUSE) },
@@ -821,7 +825,9 @@ export class MowerStatusCard extends LitElement {
                             )
                           : features & FEATURE_STOP
                             ? this.stopButton("stop", unavailable, () =>
-                                  this.perform("lawn_mower.stop", this.config!.entity, { text: this.text("action.stop_confirm") }),
+                                  this.perform(this.service("stop"), this.config!.entity, {
+                                      text: this.text(this.robotKey("action.stop_confirm")),
+                                  }),
                               )
                             : nothing
                 }
@@ -832,7 +838,7 @@ export class MowerStatusCard extends LitElement {
                               title=${this.text("action.dock")}
                               aria-label=${this.text("action.dock")}
                               ?disabled=${unavailable || this.activity === "docked" || this.charging()}
-                              @click=${() => this.perform("lawn_mower.dock", this.config!.entity)}
+                              @click=${() => this.perform(this.service("dock"), this.config!.entity)}
                           >
                               <ha-icon icon="mdi:home-import-outline"></ha-icon>
                           </button>`
@@ -858,27 +864,95 @@ export class MowerStatusCard extends LitElement {
         </button>`;
     }
 
-    /** A mower with a continue button of its own works in tasks, as Mammotion's do. Any other just mows. */
+    /** A mower with a continue button of its own works in tasks, as Mammotion's do. Any other just mows, or cleans. */
     private mainLabel(action: MainAction): string {
-        return action === "pause" || action === "dock" || this.slots.continue ? `action.${action}` : `action.${action}_mowing`;
+        if (action === "pause" || action === "dock" || this.slots.continue) {
+            return `action.${action}`;
+        }
+        return isVacuum(this.config?.entity ?? "") ? `action.${action}_cleaning` : `action.${action}_mowing`;
     }
 
     private main(action: MainAction): void {
         const mower = this.config!.entity;
         if (action === "pause") {
-            this.perform("lawn_mower.pause", mower);
+            this.perform(this.service("pause"), mower);
         } else if (action === "dock") {
-            this.perform("lawn_mower.dock", mower);
+            this.perform(this.service("dock"), mower);
         } else if (action === "continue" && this.slots.continue) {
             this.perform("button.press", this.slots.continue);
         } else {
-            this.perform("lawn_mower.start_mowing", mower);
+            this.perform(this.service("start"), mower);
         }
     }
 
+    /** The action for the card's lawn mower or vacuum. */
+    private service(action: RobotAction): string {
+        return serviceFor(this.config!.entity, action);
+    }
+
+    /** A text's key for the kind of robot: the cleaner's own where a vacuum's text differs, as "Last cleaned" does. */
+    private robotKey(key: string): string {
+        return isVacuum(this.config?.entity ?? "") ? `${key}_vacuum` : key;
+    }
+
+    /**
+     * A vacuum's cleaning modes as buttons, such as the Spino's Floor, Wall and Waterline. The mode it cleans in now is
+     * lit. Choosing a mode cleans in it, so the cleaner asks first when it isn't already cleaning.
+     */
+    private modes(mower: HassEntity): TemplateResult | typeof nothing {
+        const modes = modesOf(mower, this.preset?.hiddenModes);
+        if (!modes) {
+            return nothing;
+        }
+        const unavailable = this.activity === "unavailable";
+        const cleaning = this.activity === "mowing";
+        return html`<div class="modes" role="group" aria-label=${this.text("mode.label")}>
+            ${modes.list.map((mode) => {
+                const active = cleaning && mode === modes.current;
+                const label = this.modeLabel(mower, mode);
+                return html`<button
+                    class="mode ${active ? "active" : ""}"
+                    aria-pressed=${active}
+                    ?disabled=${unavailable}
+                    @click=${() => {
+                        if (!active) {
+                            this.perform(
+                                "vacuum.set_fan_speed",
+                                mower.entity_id,
+                                cleaning ? undefined : { text: this.text("mode.start_confirm", { mode: label }) },
+                                { fan_speed: mode },
+                            );
+                        }
+                    }}
+                >
+                    ${label}
+                </button>`;
+            })}
+        </div>`;
+    }
+
+    /** A mode in words: Home Assistant's for the vacuum's fan speed, the integration's own, or the mode's name tidied. */
+    private modeLabel(mower: HassEntity, mode: string): string {
+        const own = this.hass!.formatEntityAttributeValue?.(mower, "fan_speed", mode);
+        if (own && own !== mode) {
+            return own;
+        }
+        const source = this.preset?.modeLabels;
+        const platform = platformOf(this.hass!, mower.entity_id);
+        const word = source && platform ? this.hass!.localize(`component.${platform}.entity.${source}.state.${mode}`) : "";
+        if (word) {
+            return word;
+        }
+        const tidy = mode.replace(/_/g, " ").toLocaleLowerCase(this.language());
+        return tidy.charAt(0).toLocaleUpperCase(this.language()) + tidy.slice(1);
+    }
+
     /** Through Home Assistant's own action handling, so a confirmation is its own dialog. */
-    private perform(service: string, entityId: string, confirmation?: { text: string }): void {
+    private perform(service: string, entityId: string, confirmation?: { text: string }, data?: Record<string, unknown>): void {
         const tapAction: Action = { action: "perform-action", perform_action: service, target: { entity_id: entityId } };
+        if (data) {
+            tapAction.data = data;
+        }
         if (confirmation) {
             tapAction.confirmation = confirmation;
         }
@@ -1060,11 +1134,11 @@ export class MowerStatusCard extends LitElement {
             return null;
         }
         if ("end" in this.lastMowed) {
-            return this.markup("common.last_mowed", { when: this.whenMarkup(this.lastMowed.end) });
+            return this.markup(this.robotKey("common.last_mowed"), { when: this.whenMarkup(this.lastMowed.end) });
         }
         const days = Math.floor((Date.now() - this.lastMowed.since) / 86_400_000);
         // A day or less of history without mowing says nothing worth a line, and "over 1 days" isn't a sentence.
-        return days >= 2 ? this.text("common.last_mowed_long_ago", { days: String(days) }) : null;
+        return days >= 2 ? this.text(this.robotKey("common.last_mowed_long_ago"), { days: String(days) }) : null;
     }
 
     /** A moment as its day ("tänään", "ke 14.10.") and its time ("klo 15.18"), in the viewer's language. */
@@ -1521,6 +1595,40 @@ export class MowerStatusCard extends LitElement {
                     flex-wrap: wrap;
                     gap: 6px;
                     margin-top: 12px;
+                }
+
+                /* A vacuum's cleaning modes: quiet outlines, the mode it cleans in now filled. */
+                .modes {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                    margin-top: 12px;
+                }
+
+                .mode {
+                    padding: 5px 12px;
+                    border: 1px solid var(--divider-color, rgba(127, 127, 127, 0.3));
+                    border-radius: 999px;
+                    font-size: 13px;
+                    line-height: 18px;
+                    color: var(--primary-text-color);
+                }
+
+                .mode.active {
+                    border-color: var(--primary-color);
+                    background: var(--primary-color);
+                    color: var(--text-primary-color, #fff);
+                    cursor: default;
+                }
+
+                .mode:disabled {
+                    opacity: 0.5;
+                    cursor: default;
+                }
+
+                .mode:focus-visible {
+                    outline: 2px solid var(--primary-color);
+                    outline-offset: 2px;
                 }
 
                 .chip {

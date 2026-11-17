@@ -20,3 +20,13 @@ export const FEATURE_STOP = 8;
 
 /** Where HACS installs ha-mammotion-assets, whose pictures the card shows for a Mammotion mower when they are there. */
 export const MAMMOTION_ASSETS = "/hacsfiles/ha-mammotion-assets/dist/assets";
+
+/**
+ * The vacuum entity's supported_features bits, for a cleaner shown as a vacuum, such as Mammotion's Spino pool cleaner.
+ * The card reads them as the lawn_mower bits above, so the same buttons lead.
+ */
+export const VACUUM_PAUSE = 4;
+export const VACUUM_STOP = 8;
+export const VACUUM_RETURN_HOME = 16;
+export const VACUUM_FAN_SPEED = 32;
+export const VACUUM_START = 8192;

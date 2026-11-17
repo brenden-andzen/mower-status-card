@@ -8,6 +8,7 @@
  * A preset can also tell what the integration's own states mean, for an integration that doesn't keep to Home
  * Assistant's lawn_mower states, as Sunseeker's doesn't.
  */
+import { isVacuum } from "./device";
 import type { HassEntity, HomeAssistant } from "./hass";
 import { NONE, SLOTS } from "./types";
 import type { MowerStatusCardConfig, Slot } from "./types";
@@ -59,9 +60,27 @@ export interface Preset {
     chargingStates?: string[];
     /** States that say no more than the standard one they map to, so the card names them in its own words. */
     plainStates?: string[];
+    /**
+     * For a vacuum: where the integration translates its cleaning modes, as `<entity domain>.<translation key>` of an entity
+     * whose states are the same words, such as Mammotion's work mode sensor. Home Assistant's own words for the vacuum's
+     * fan speeds come first, where it has them.
+     */
+    modeLabels?: string;
+    /** For a vacuum: fan speeds that aren't modes to choose, such as Mammotion's RECHARGE, which the dock button does. */
+    hiddenModes?: string[];
 }
 
-/** Per integration. Mammotion's keys are the same for every model, and its states Home Assistant's own. */
+/**
+ * A vacuum of any integration, such as a pool cleaner. Its cleaning is the card's mowing. Mapped as an own state, it reads
+ * as Home Assistant's vacuum word, "Cleaning", rather than the lawn mower's.
+ */
+const VACUUM: Preset = { slots: {}, states: { cleaning: "mowing" } };
+
+/**
+ * Per integration, by its platform. An integration's vacuum, such as Mammotion's Spino pool cleaner, has its own preset
+ * under `<platform>_vacuum`, apart from its mowers'. Mammotion's keys are the same for every model, and its states Home
+ * Assistant's own.
+ */
 export const PRESETS: Record<string, Preset> = {
     mammotion: {
         slots: {
@@ -82,6 +101,17 @@ export const PRESETS: Record<string, Preset> = {
             continue: "continue_last_job",
             cancel: "cancel_task",
         },
+    },
+    // Mammotion's Spino pool cleaners. The vacuum's fan speeds are its cleaning modes, translated by its work mode sensor.
+    mammotion_vacuum: {
+        slots: {
+            battery: "spino_battery",
+            error: "spino_error_message",
+            error_time: "spino_error_time",
+            update: "update",
+        },
+        modeLabels: "sensor.spino_work_mode",
+        hiddenModes: ["RECHARGE", "OFF", "UNKNOWN"],
     },
     sunseeker: {
         slots: {
@@ -120,9 +150,14 @@ export const PRESETS: Record<string, Preset> = {
     },
 };
 
-/** The integration's preset, if the card has one. */
+/** The integration's preset, if the card has one. A vacuum always has one, the integration's own on top of any vacuum's. */
 export function presetOf(hass: HomeAssistant, mower: string): Preset | undefined {
-    return PRESETS[platformOf(hass, mower) ?? ""];
+    const platform = platformOf(hass, mower) ?? "";
+    if (!isVacuum(mower)) {
+        return PRESETS[platform];
+    }
+    const own = platform ? PRESETS[`${platform}_vacuum`] : undefined;
+    return own ? { ...VACUUM, ...own, states: { ...VACUUM.states, ...own.states } } : VACUUM;
 }
 
 /** What a state of the mower means to the card, in Home Assistant's lawn_mower states. */

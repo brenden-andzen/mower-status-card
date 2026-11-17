@@ -19,7 +19,7 @@ it last mowed. Whatever is wrong with it shows as chips, an error, weak position
 update, and nothing shows while all is well. One large button does what makes sense now. It pauses while mowing,
 continues an unfinished task, or starts a new one. Cancel and dock sit beside it.
 
-The card needs only the mower's `lawn_mower` entity. It finds the rest on the mower's own device, the battery,
+The card needs only the mower's `lawn_mower` entity. It also takes a robot cleaner that Home Assistant has as a `vacuum`, such as [Mammotion's Spino pool cleaner](#a-vacuum-such-as-mammotions-spino-pool-cleaner). It finds the rest on the mower's own device, the battery,
 charging and rain by Home Assistant's own device classes and the firmware by its update entity for any mower, and for a
 [Mammotion](https://github.com/mikey0000/Mammotion-HA) mower everything else too, such as the task's progress, the last
 error, positioning and the blades. A [Sunseeker](https://github.com/Sdahl1234/Sunseeker-lawn-mower) mower, Brucke and
@@ -53,7 +53,7 @@ masonry or panel view, or a stack or other card the card is inside, even in a se
 | Name                  | Type    | Description                                                                                                                                                                                                                                                                                                                                                                                      | Default                                                                         |
 | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
 | `type`                | string  | `custom:mower-status-card`                                                                                                                                                                                                                                                                                                                                                                       | required                                                                        |
-| `entity`              | string  | The mower's `lawn_mower` entity                                                                                                                                                                                                                                                                                                                                                                  | required                                                                        |
+| `entity`              | string  | The mower's `lawn_mower` entity, or a cleaner's `vacuum` entity                                                                                                                                                                                                                                                                                                                                  | required                                                                        |
 | `name`                | string  | Replaces the device's name                                                                                                                                                                                                                                                                                                                                                                       |                                                                                 |
 | `show_image`          | boolean | Show a picture of the mower when one is given or found. Without one the card shows a gauge                                                                                                                                                                                                                                                                                                       | `true`                                                                          |
 | `image`               | string  | A picture of your own, such as `/local/mower.png`. Replaces the one found                                                                                                                                                                                                                                                                                                                        |                                                                                 |
@@ -186,6 +186,19 @@ layout tab may need raising by hand.
 <img src="https://raw.githubusercontent.com/jesmak/mower-status-card/main/docs/images/very-narrow-light.png#gh-light-mode-only" width="210" alt="A very narrow card, the ring beside the name, state and times, which wrap to the room beside it, and the buttons below">
 <img src="https://raw.githubusercontent.com/jesmak/mower-status-card/main/docs/images/very-narrow-dark.png#gh-dark-mode-only" width="210" alt="A very narrow card, the ring beside the name, state and times, which wrap to the room beside it, and the buttons below">
 </p>
+
+## A vacuum, such as Mammotion's Spino pool cleaner
+
+A cleaner Home Assistant has as a `vacuum` gets the same card, in its own words. It cleans rather than mows, and its last cleaning shows from the history as "Last cleaned yesterday at 3:18 PM". The large button starts cleaning, sends it back to its dock while it cleans when it can't pause, and continues while it returns. Its actions are the vacuum's own, such as `vacuum.start` and `vacuum.return_to_base`.
+
+A cleaner with modes to choose from, a vacuum's fan speeds, gets them as a row of buttons above the notices, the mode it cleans in now filled. Choosing a mode cleans in it through `vacuum.set_fan_speed`, so the card asks first when the cleaner isn't already cleaning. A mode reads in Home Assistant's words where it has them, otherwise in the integration's own or its name tidied.
+
+For a [Mammotion](https://github.com/mikey0000/Mammotion-HA) Spino the card finds the battery, charging, the last error with its time and the firmware by their translation keys. Its modes, All, Floor, Wall, Eco and Waterline, read in Mammotion's own words from its cleaning mode sensor, and its RECHARGE mode is left to the dock button. An integration's vacuum preset lives in `src/slots.ts` under `<platform>_vacuum`, apart from its mowers'.
+
+```yaml
+type: custom:mower-status-card
+entity: vacuum.pool_cleaner
+```
 
 ## Examples
 
