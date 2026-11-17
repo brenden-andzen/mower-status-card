@@ -62,6 +62,14 @@ export function featuresOf(entity: HassEntity): number {
     );
 }
 
+/**
+ * A vacuum idle on its charger reads as docked. Mammotion's Spino reports docked only while it docks, and idle for the rest
+ * of the time it charges, so its charging sensor tells. A lawn mower reads as its own state says.
+ */
+export function chargingActivity(entityId: string, activity: string, charging: boolean): string {
+    return isVacuum(entityId) && activity === "idle" && charging ? "docked" : activity;
+}
+
 /** The Home Assistant action that does this for the entity's domain. */
 export function serviceFor(entityId: string, action: RobotAction): string {
     return (SERVICES[domainOf(entityId)] ?? SERVICES.lawn_mower)[action];

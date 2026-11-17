@@ -189,7 +189,7 @@ layout tab may need raising by hand.
 
 ## A vacuum, such as Mammotion's Spino pool cleaner
 
-A cleaner Home Assistant has as a `vacuum` gets the same card, in its own words. It cleans rather than mows, and its last cleaning shows from the history as "Last cleaned yesterday at 3:18 PM". The large button starts cleaning, sends it back to its dock while it cleans when it can't pause, and continues while it returns. Its actions are the vacuum's own, such as `vacuum.start` and `vacuum.return_to_base`.
+A cleaner Home Assistant has as a `vacuum` gets the same card, in its own words. It cleans rather than mows, and its last cleaning shows from the history as "Last cleaned yesterday at 3:18 PM". The large button starts cleaning, sends it back to its dock while it cleans when it can't pause, and continues while it returns. Idle on its charger it reads as docked, as the Spino reports docked only while it docks. Its actions are the vacuum's own, such as `vacuum.start` and `vacuum.return_to_base`.
 
 A cleaner with modes to choose from, a vacuum's fan speeds, gets them as a row of buttons above the notices, the mode it cleans in now filled. Choosing a mode cleans in it through `vacuum.set_fan_speed`, so the card asks first when the cleaner isn't already cleaning. A mode reads in Home Assistant's words where it has them, otherwise in the integration's own or its name tidied.
 

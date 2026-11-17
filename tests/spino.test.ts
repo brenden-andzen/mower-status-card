@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FEATURE_DOCK, FEATURE_PAUSE, FEATURE_START_MOWING, FEATURE_STOP } from "../src/const";
-import { featuresOf, modesOf, serviceFor } from "../src/device";
+import { chargingActivity, featuresOf, modesOf, serviceFor } from "../src/device";
 import type { EntityRegistryEntry, HassEntity, HomeAssistant } from "../src/hass";
 import "../src/mower-status-card";
 import type { MowerStatusCard } from "../src/mower-status-card";
@@ -152,6 +152,26 @@ describe("a vacuum, such as Mammotion's Spino pool cleaner", () => {
             perform_action: "vacuum.start",
             target: { entity_id: "vacuum.pip" },
         });
+    });
+
+    it("reads an idle vacuum on its charger as docked, and a lawn mower as its state says", () => {
+        expect(chargingActivity("vacuum.pip", "idle", true)).toBe("docked");
+        expect(chargingActivity("vacuum.pip", "idle", false)).toBe("idle");
+        expect(chargingActivity("vacuum.pip", "mowing", true)).toBe("mowing");
+        expect(chargingActivity("lawn_mower.matti", "idle", true)).toBe("idle");
+    });
+
+    it("shows a Spino idle on its charger as docked and charging, with dock greyed", async () => {
+        const element = await card(spino({ "vacuum.pip": { state: "idle" }, "sensor.pip_status": { state: "PREPARE" } }));
+        expect(text(element.shadowRoot!.querySelector(".state"))).toBe("Docked, charging");
+        const buttons = [...element.shadowRoot!.querySelectorAll<HTMLButtonElement>(".buttons button")];
+        expect(text(buttons[0])).toBe("Start cleaning");
+        expect(buttons[1].disabled).toBe(true);
+    });
+
+    it("shows a Spino idle off its charger as idle", async () => {
+        const element = await card(spino({ "vacuum.pip": { state: "idle" }, "binary_sensor.pip_charging": { state: "off" } }));
+        expect(text(element.shadowRoot!.querySelector(".state"))).toBe("Idle");
     });
 
     it("sends it back to the dock while it cleans, as it can't pause", async () => {

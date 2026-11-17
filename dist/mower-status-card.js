@@ -651,6 +651,9 @@ function featuresOf(entity) {
   }
   return (raw & VACUUM_START ? FEATURE_START_MOWING : 0) | (raw & VACUUM_PAUSE ? FEATURE_PAUSE : 0) | (raw & VACUUM_RETURN_HOME ? FEATURE_DOCK : 0) | (raw & VACUUM_STOP ? FEATURE_STOP : 0);
 }
+function chargingActivity(entityId, activity, charging) {
+  return isVacuum(entityId) && activity === "idle" && charging ? "docked" : activity;
+}
 function serviceFor(entityId, action) {
   return (SERVICES[domainOf(entityId)] ?? SERVICES.lawn_mower)[action];
 }
@@ -2013,7 +2016,11 @@ var MowerStatusCard = class extends i4 {
     this.slots = resolveSlots(this.hass, this.config);
     const mower = this.hass.states[this.config.entity];
     this.preset = presetOf(this.hass, this.config.entity);
-    this.activity = activityOf(this.preset, mower?.state ?? "");
+    this.activity = chargingActivity(
+      this.config.entity,
+      activityOf(this.preset, mower?.state ?? ""),
+      this.slotState("charging")?.state === "on"
+    );
     const found = notices({
       states: this.slotStates(),
       mowerState: this.activity,

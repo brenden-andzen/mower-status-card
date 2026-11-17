@@ -19,7 +19,7 @@ import {
     MAMMOTION_ASSETS,
     TICK_MS,
 } from "./const";
-import { featuresOf, isRobot, isVacuum, modesOf, serviceFor } from "./device";
+import { chargingActivity, featuresOf, isRobot, isVacuum, modesOf, serviceFor } from "./device";
 import type { RobotAction } from "./device";
 import "./editor";
 import { ScrollFade, fadeStyles } from "./fade";
@@ -516,7 +516,11 @@ export class MowerStatusCard extends LitElement {
         this.slots = resolveSlots(this.hass, this.config);
         const mower = this.hass.states[this.config.entity];
         this.preset = presetOf(this.hass, this.config.entity);
-        this.activity = activityOf(this.preset, mower?.state ?? "");
+        this.activity = chargingActivity(
+            this.config.entity,
+            activityOf(this.preset, mower?.state ?? ""),
+            this.slotState("charging")?.state === "on",
+        );
         const found = notices({
             states: this.slotStates(),
             mowerState: this.activity,
