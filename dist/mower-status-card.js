@@ -858,6 +858,8 @@ var en_default = {
     variant_white: "White model",
     show_cancel: "Show the cancel or stop button",
     show_cancel_helper: "The mower's own cancel button, or Home Assistant's stop when it has none",
+    hide_controls_when_charging: "Hide the buttons while charging",
+    hide_controls_when_charging_helper: "Leaves out the modes and every button while it is on its charger",
     blade_warning_hours: "Blade limit",
     blade_warning_hours_helper: "In hours, when the mower reports none of its own",
     entities: "Entities",
@@ -981,6 +983,8 @@ var fi_default = {
     variant_white: "Valkoinen malli",
     show_cancel: "N\xE4yt\xE4 peru- tai pys\xE4yt\xE4-painike",
     show_cancel_helper: "Ruohonleikkurin oma peru-painike, tai Home Assistantin pys\xE4ytys, jos sellaista ei ole",
+    hide_controls_when_charging: "Piilota painikkeet latauksen ajaksi",
+    hide_controls_when_charging_helper: "J\xE4tt\xE4\xE4 tilat ja kaikki painikkeet pois, kun laite on laturissa",
     blade_warning_hours: "Terien vaihtoraja",
     blade_warning_hours_helper: "Tunteina, jos ruohonleikkuri ei kerro omaansa",
     entities: "Entiteetit",
@@ -1235,6 +1239,7 @@ function slotChanges(found, chosen, previous = {}) {
 var DEFAULTS = {
   show_image: true,
   show_cancel: true,
+  hide_controls_when_charging: false,
   image_variant: "default"
 };
 function mainSchema(config, mammotion, text) {
@@ -1267,6 +1272,7 @@ function mainSchema(config, mammotion, text) {
       ]
     },
     { name: "show_cancel", selector: { boolean: {} } },
+    { name: "hide_controls_when_charging", selector: { boolean: {} } },
     { name: "blade_warning_hours", selector: { number: { min: 0, max: 5e3, step: 1, mode: "box", unit_of_measurement: "h" } } },
     ...rowStepSchema(config, text)
   ];
@@ -2241,8 +2247,15 @@ var MowerStatusCard = class extends i4 {
         return this.text(`notice.${notice.id}_text`, values);
     }
   }
+  /** With `hide_controls_when_charging`, the modes and the buttons are left out while it charges. */
+  controlsHidden() {
+    return this.config?.hide_controls_when_charging === true && this.charging();
+  }
   /** The big button, then Cancel and Dock as icons. A button the mower can't use is left out, one it can't use now is greyed. */
   buttons(mower) {
+    if (this.controlsHidden()) {
+      return A;
+    }
     const unavailable = this.activity === "unavailable";
     const features = featuresOf(mower);
     const main = mainAction(this.activity, features);
@@ -2328,7 +2341,7 @@ var MowerStatusCard = class extends i4 {
    */
   modes(mower) {
     const modes = modesOf(mower, this.preset?.hiddenModes);
-    if (!modes) {
+    if (!modes || this.controlsHidden()) {
       return A;
     }
     const unavailable = this.activity === "unavailable";

@@ -41,6 +41,11 @@ export interface MowerStatusCardConfig extends LovelaceCardConfig, RowStepConfig
     image_variant?: "default" | "white";
     /** False leaves out the cancel button, and Home Assistant's stop in its place. */
     show_cancel?: boolean;
+    /**
+     * True leaves out the modes and every button while the charging sensor is on, so nobody starts a cleaner, such as
+     * the Spino, that is out of the water on its charger.
+     */
+    hide_controls_when_charging?: boolean;
     /** The blade limit for a mower that reports none of its own. */
     blade_warning_hours?: number;
     /** Only what differs from what the card finds by itself: an entity in place of the found one, or "none". */

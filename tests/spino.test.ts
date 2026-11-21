@@ -169,6 +169,24 @@ describe("a vacuum, such as Mammotion's Spino pool cleaner", () => {
         expect(buttons[1].disabled).toBe(true);
     });
 
+    it("leaves out the modes and the buttons on its charger with hide_controls_when_charging, and shows them off it", async () => {
+        const charging = spino({ "vacuum.pip": { state: "idle" }, "sensor.pip_status": { state: "PREPARE" } });
+        const hidden = await card(charging, { hide_controls_when_charging: true });
+        expect(text(hidden.shadowRoot!.querySelector(".state"))).toBe("Docked, charging");
+        expect(hidden.shadowRoot!.querySelectorAll(".mode")).toHaveLength(0);
+        expect(hidden.shadowRoot!.querySelector(".buttons")).toBeNull();
+        hidden.remove();
+        const shown = await card(charging);
+        expect(shown.shadowRoot!.querySelectorAll(".mode").length).toBeGreaterThan(0);
+        expect(shown.shadowRoot!.querySelector(".buttons")).not.toBeNull();
+        shown.remove();
+        const off = await card(spino({ "vacuum.pip": { state: "idle" }, "binary_sensor.pip_charging": { state: "off" } }), {
+            hide_controls_when_charging: true,
+        });
+        expect(off.shadowRoot!.querySelectorAll(".mode").length).toBeGreaterThan(0);
+        expect(text(off.shadowRoot!.querySelector(".buttons button"))).toBe("Start cleaning");
+    });
+
     it("shows a Spino idle off its charger as idle", async () => {
         const element = await card(spino({ "vacuum.pip": { state: "idle" }, "binary_sensor.pip_charging": { state: "off" } }));
         expect(text(element.shadowRoot!.querySelector(".state"))).toBe("Idle");

@@ -21,6 +21,7 @@ interface SchemaEntry {
 const DEFAULTS: Record<string, unknown> = {
     show_image: true,
     show_cancel: true,
+    hide_controls_when_charging: false,
     image_variant: "default",
 };
 
@@ -56,6 +57,7 @@ function mainSchema(config: MowerStatusCardConfig, mammotion: boolean, text: (ke
             ],
         },
         { name: "show_cancel", selector: { boolean: {} } },
+        { name: "hide_controls_when_charging", selector: { boolean: {} } },
         { name: "blade_warning_hours", selector: { number: { min: 0, max: 5000, step: 1, mode: "box", unit_of_measurement: "h" } } },
         ...rowStepSchema(config, text),
     ];

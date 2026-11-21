@@ -84,6 +84,8 @@
         "variant_white": "White model",
         "show_cancel": "Show the cancel or stop button",
         "show_cancel_helper": "The mower's own cancel button, or Home Assistant's stop when it has none",
+        "hide_controls_when_charging": "Hide the buttons while charging",
+        "hide_controls_when_charging_helper": "Leaves out the modes and every button while it is on its charger",
         "blade_warning_hours": "Blade limit",
         "blade_warning_hours_helper": "In hours, when the mower reports none of its own",
         "entities": "Entities",

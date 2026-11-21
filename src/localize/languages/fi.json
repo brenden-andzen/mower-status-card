@@ -84,6 +84,8 @@
         "variant_white": "Valkoinen malli",
         "show_cancel": "Näytä peru- tai pysäytä-painike",
         "show_cancel_helper": "Ruohonleikkurin oma peru-painike, tai Home Assistantin pysäytys, jos sellaista ei ole",
+        "hide_controls_when_charging": "Piilota painikkeet latauksen ajaksi",
+        "hide_controls_when_charging_helper": "Jättää tilat ja kaikki painikkeet pois, kun laite on laturissa",
         "blade_warning_hours": "Terien vaihtoraja",
         "blade_warning_hours_helper": "Tunteina, jos ruohonleikkuri ei kerro omaansa",
         "entities": "Entiteetit",

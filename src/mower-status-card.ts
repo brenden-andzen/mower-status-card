@@ -804,8 +804,16 @@ export class MowerStatusCard extends LitElement {
         }
     }
 
+    /** With `hide_controls_when_charging`, the modes and the buttons are left out while it charges. */
+    private controlsHidden(): boolean {
+        return this.config?.hide_controls_when_charging === true && this.charging();
+    }
+
     /** The big button, then Cancel and Dock as icons. A button the mower can't use is left out, one it can't use now is greyed. */
-    private buttons(mower: HassEntity): TemplateResult {
+    private buttons(mower: HassEntity): TemplateResult | typeof nothing {
+        if (this.controlsHidden()) {
+            return nothing;
+        }
         const unavailable = this.activity === "unavailable";
         const features = featuresOf(mower);
         const main = mainAction(this.activity, features);
@@ -905,7 +913,7 @@ export class MowerStatusCard extends LitElement {
      */
     private modes(mower: HassEntity): TemplateResult | typeof nothing {
         const modes = modesOf(mower, this.preset?.hiddenModes);
-        if (!modes) {
+        if (!modes || this.controlsHidden()) {
             return nothing;
         }
         const unavailable = this.activity === "unavailable";
