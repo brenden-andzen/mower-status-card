@@ -44,6 +44,7 @@
         "stop": "Pysäytä",
         "stop_confirm": "Pysäytetäänkö ruohonleikkuri?",
         "dock": "Telakkaan",
+        "settings": "Asetukset",
         "continue_cleaning": "Jatka puhdistusta",
         "start_cleaning": "Aloita puhdistus",
         "stop_confirm_vacuum": "Pysäytetäänkö puhdistusrobotti?"
@@ -86,6 +87,8 @@
         "show_cancel_helper": "Ruohonleikkurin oma peru-painike, tai Home Assistantin pysäytys, jos sellaista ei ole",
         "hide_controls_when_charging": "Piilota painikkeet latauksen ajaksi",
         "hide_controls_when_charging_helper": "Jättää tilat ja kaikki painikkeet pois, kun laite on laturissa",
+        "settings_action": "Asetuspainike",
+        "settings_action_helper": "Mitä kortin kulman ratas tekee, esimerkiksi avaa näkymän laitteen asetuksista. Ilman toimintoa ratasta ei näytetä.",
         "blade_warning_hours": "Terien vaihtoraja",
         "blade_warning_hours_helper": "Tunteina, jos ruohonleikkuri ei kerro omaansa",
         "entities": "Entiteetit",

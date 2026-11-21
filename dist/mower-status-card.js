@@ -818,6 +818,7 @@ var en_default = {
     stop: "Stop",
     stop_confirm: "Stop the mower?",
     dock: "Dock",
+    settings: "Settings",
     continue_cleaning: "Continue cleaning",
     start_cleaning: "Start cleaning",
     stop_confirm_vacuum: "Stop the cleaner?"
@@ -860,6 +861,8 @@ var en_default = {
     show_cancel_helper: "The mower's own cancel button, or Home Assistant's stop when it has none",
     hide_controls_when_charging: "Hide the buttons while charging",
     hide_controls_when_charging_helper: "Leaves out the modes and every button while it is on its charger",
+    settings_action: "Settings button",
+    settings_action_helper: "What the cog in the card's corner does, such as opening a view of the device's settings. Without an action there is no cog.",
     blade_warning_hours: "Blade limit",
     blade_warning_hours_helper: "In hours, when the mower reports none of its own",
     entities: "Entities",
@@ -943,6 +946,7 @@ var fi_default = {
     stop: "Pys\xE4yt\xE4",
     stop_confirm: "Pys\xE4ytet\xE4\xE4nk\xF6 ruohonleikkuri?",
     dock: "Telakkaan",
+    settings: "Asetukset",
     continue_cleaning: "Jatka puhdistusta",
     start_cleaning: "Aloita puhdistus",
     stop_confirm_vacuum: "Pys\xE4ytet\xE4\xE4nk\xF6 puhdistusrobotti?"
@@ -985,6 +989,8 @@ var fi_default = {
     show_cancel_helper: "Ruohonleikkurin oma peru-painike, tai Home Assistantin pys\xE4ytys, jos sellaista ei ole",
     hide_controls_when_charging: "Piilota painikkeet latauksen ajaksi",
     hide_controls_when_charging_helper: "J\xE4tt\xE4\xE4 tilat ja kaikki painikkeet pois, kun laite on laturissa",
+    settings_action: "Asetuspainike",
+    settings_action_helper: "Mit\xE4 kortin kulman ratas tekee, esimerkiksi avaa n\xE4kym\xE4n laitteen asetuksista. Ilman toimintoa ratasta ei n\xE4ytet\xE4.",
     blade_warning_hours: "Terien vaihtoraja",
     blade_warning_hours_helper: "Tunteina, jos ruohonleikkuri ei kerro omaansa",
     entities: "Entiteetit",
@@ -1273,6 +1279,7 @@ function mainSchema(config, mammotion, text) {
     },
     { name: "show_cancel", selector: { boolean: {} } },
     { name: "hide_controls_when_charging", selector: { boolean: {} } },
+    { name: "settings_action", selector: { ui_action: {} } },
     { name: "blade_warning_hours", selector: { number: { min: 0, max: 5e3, step: 1, mode: "box", unit_of_measurement: "h" } } },
     ...rowStepSchema(config, text)
   ];
@@ -2065,13 +2072,17 @@ var MowerStatusCard = class extends i4 {
     const unavailable = this.activity === "unavailable";
     return b2`
             <ha-card
-                class=${[unavailable ? "unavailable" : "", this.heightStyle() ? "held" : ""].join(" ").trim()}
+                class=${[
+      unavailable ? "unavailable" : "",
+      this.heightStyle() ? "held" : "",
+      this.config.settings_action ? "with-settings" : ""
+    ].join(" ").replace(/\s+/g, " ").trim()}
                 style=${this.cardStyle()}
                 lang=${this.language()}
             >
                 ${this.picture ? this.pictureLayout(mower) : this.gaugeLayout(mower)}
                 <div class="notices">${this.modes(mower)}${this.chips()}</div>
-                ${this.buttons(mower)} ${this.picture ? this.footer() : A}
+                ${this.buttons(mower)} ${this.picture ? this.footer() : A} ${this.settingsButton()}
             </ha-card>
         `;
   }
@@ -2246,6 +2257,28 @@ var MowerStatusCard = class extends i4 {
       default:
         return this.text(`notice.${notice.id}_text`, values);
     }
+  }
+  /** A cog in the card's top corner that runs `settings_action`, such as opening a view of the device's settings. */
+  settingsButton() {
+    const action = this.config?.settings_action;
+    if (!action) {
+      return A;
+    }
+    const label = this.text("action.settings");
+    return b2`<button
+            class="settings"
+            title=${label}
+            aria-label=${label}
+            @click=${() => this.dispatchEvent(
+      new CustomEvent("hass-action", {
+        detail: { config: { entity: this.config.entity, tap_action: action }, action: "tap" },
+        bubbles: true,
+        composed: true
+      })
+    )}
+        >
+            <ha-icon icon="mdi:cog-outline"></ha-icon>
+        </button>`;
   }
   /** With `hide_controls_when_charging`, the modes and the buttons are left out while it charges. */
   controlsHidden() {
@@ -2669,6 +2702,7 @@ var MowerStatusCard = class extends i4 {
                     overflow: hidden;
                     container-type: inline-size;
                     padding: 14px;
+                    position: relative;
                     font-variant-numeric: tabular-nums;
                 }
 
@@ -2706,6 +2740,33 @@ var MowerStatusCard = class extends i4 {
 
                 .state {
                     color: var(--secondary-text-color);
+                }
+
+                /* The settings cog sits in the top corner, and the first line of text keeps clear of it. */
+                .settings {
+                    position: absolute;
+                    top: 6px;
+                    right: 6px;
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    color: var(--secondary-text-color);
+                }
+
+                .settings:hover {
+                    background: var(--secondary-background-color);
+                }
+
+                .settings ha-icon {
+                    --mdc-icon-size: 20px;
+                }
+
+                .with-settings .name,
+                .with-settings .big-state {
+                    padding-right: 30px;
                 }
 
                 .state.mowing,

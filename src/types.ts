@@ -46,6 +46,11 @@ export interface MowerStatusCardConfig extends LovelaceCardConfig, RowStepConfig
      * the Spino, that is out of the water on its charger.
      */
     hide_controls_when_charging?: boolean;
+    /**
+     * A Lovelace action for a settings button in the card's top corner, such as
+     * `{ action: navigate, navigation_path: /lovelace/pool-cleaner }`. Without one there is no settings button.
+     */
+    settings_action?: Record<string, unknown>;
     /** The blade limit for a mower that reports none of its own. */
     blade_warning_hours?: number;
     /** Only what differs from what the card finds by itself: an entity in place of the found one, or "none". */

@@ -44,6 +44,7 @@
         "stop": "Stop",
         "stop_confirm": "Stop the mower?",
         "dock": "Dock",
+        "settings": "Settings",
         "continue_cleaning": "Continue cleaning",
         "start_cleaning": "Start cleaning",
         "stop_confirm_vacuum": "Stop the cleaner?"
@@ -86,6 +87,8 @@
         "show_cancel_helper": "The mower's own cancel button, or Home Assistant's stop when it has none",
         "hide_controls_when_charging": "Hide the buttons while charging",
         "hide_controls_when_charging_helper": "Leaves out the modes and every button while it is on its charger",
+        "settings_action": "Settings button",
+        "settings_action_helper": "What the cog in the card's corner does, such as opening a view of the device's settings. Without an action there is no cog.",
         "blade_warning_hours": "Blade limit",
         "blade_warning_hours_helper": "In hours, when the mower reports none of its own",
         "entities": "Entities",

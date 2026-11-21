@@ -187,6 +187,19 @@ describe("a vacuum, such as Mammotion's Spino pool cleaner", () => {
         expect(text(off.shadowRoot!.querySelector(".buttons button"))).toBe("Start cleaning");
     });
 
+    it("shows a settings cog that runs settings_action, and none without one", async () => {
+        const plain = await card(spino());
+        expect(plain.shadowRoot!.querySelector(".settings")).toBeNull();
+        plain.remove();
+        const navigate = { action: "navigate", navigation_path: "/lovelace/pool-cleaner" };
+        const element = await card(spino(), { settings_action: navigate, hide_controls_when_charging: true });
+        const cog = element.shadowRoot!.querySelector<HTMLButtonElement>(".settings")!;
+        expect(cog.getAttribute("aria-label")).toBe("Settings");
+        const fired = actions(element);
+        cog.click();
+        expect(fired.mock.calls[0][0]).toEqual(navigate);
+    });
+
     it("shows a Spino idle off its charger as idle", async () => {
         const element = await card(spino({ "vacuum.pip": { state: "idle" }, "binary_sensor.pip_charging": { state: "off" } }));
         expect(text(element.shadowRoot!.querySelector(".state"))).toBe("Idle");

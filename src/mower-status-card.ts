@@ -565,13 +565,20 @@ export class MowerStatusCard extends LitElement {
         const unavailable = this.activity === "unavailable";
         return html`
             <ha-card
-                class=${[unavailable ? "unavailable" : "", this.heightStyle() ? "held" : ""].join(" ").trim()}
+                class=${[
+                    unavailable ? "unavailable" : "",
+                    this.heightStyle() ? "held" : "",
+                    this.config.settings_action ? "with-settings" : "",
+                ]
+                    .join(" ")
+                    .replace(/\s+/g, " ")
+                    .trim()}
                 style=${this.cardStyle()}
                 lang=${this.language()}
             >
                 ${this.picture ? this.pictureLayout(mower) : this.gaugeLayout(mower)}
                 <div class="notices">${this.modes(mower)}${this.chips()}</div>
-                ${this.buttons(mower)} ${this.picture ? this.footer() : nothing}
+                ${this.buttons(mower)} ${this.picture ? this.footer() : nothing} ${this.settingsButton()}
             </ha-card>
         `;
     }
@@ -802,6 +809,30 @@ export class MowerStatusCard extends LitElement {
             default:
                 return this.text(`notice.${notice.id}_text`, values);
         }
+    }
+
+    /** A cog in the card's top corner that runs `settings_action`, such as opening a view of the device's settings. */
+    private settingsButton(): TemplateResult | typeof nothing {
+        const action = this.config?.settings_action;
+        if (!action) {
+            return nothing;
+        }
+        const label = this.text("action.settings");
+        return html`<button
+            class="settings"
+            title=${label}
+            aria-label=${label}
+            @click=${() =>
+                this.dispatchEvent(
+                    new CustomEvent("hass-action", {
+                        detail: { config: { entity: this.config!.entity, tap_action: action }, action: "tap" },
+                        bubbles: true,
+                        composed: true,
+                    }),
+                )}
+        >
+            <ha-icon icon="mdi:cog-outline"></ha-icon>
+        </button>`;
     }
 
     /** With `hide_controls_when_charging`, the modes and the buttons are left out while it charges. */
@@ -1345,6 +1376,7 @@ export class MowerStatusCard extends LitElement {
                     overflow: hidden;
                     container-type: inline-size;
                     padding: 14px;
+                    position: relative;
                     font-variant-numeric: tabular-nums;
                 }
 
@@ -1382,6 +1414,33 @@ export class MowerStatusCard extends LitElement {
 
                 .state {
                     color: var(--secondary-text-color);
+                }
+
+                /* The settings cog sits in the top corner, and the first line of text keeps clear of it. */
+                .settings {
+                    position: absolute;
+                    top: 6px;
+                    right: 6px;
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    color: var(--secondary-text-color);
+                }
+
+                .settings:hover {
+                    background: var(--secondary-background-color);
+                }
+
+                .settings ha-icon {
+                    --mdc-icon-size: 20px;
+                }
+
+                .with-settings .name,
+                .with-settings .big-state {
+                    padding-right: 30px;
                 }
 
                 .state.mowing,
