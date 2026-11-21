@@ -116,7 +116,8 @@
         "mileage": "Total distance",
         "continue": "Continue task button",
         "cancel": "Cancel task button",
-        "picture": "Picture"
+        "picture": "Picture",
+        "last_task": "Last task's time"
     },
     "state": {
         "idle": "Idle",

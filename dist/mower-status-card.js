@@ -890,7 +890,8 @@ var en_default = {
     mileage: "Total distance",
     continue: "Continue task button",
     cancel: "Cancel task button",
-    picture: "Picture"
+    picture: "Picture",
+    last_task: "Last task's time"
   },
   state: {
     idle: "Idle",
@@ -1018,7 +1019,8 @@ var fi_default = {
     mileage: "Kokonaismatka",
     continue: "Jatka teht\xE4v\xE4\xE4 -painike",
     cancel: "Peru teht\xE4v\xE4 -painike",
-    picture: "Kuva"
+    picture: "Kuva",
+    last_task: "Viimeisimm\xE4n teht\xE4v\xE4n aika"
   },
   state: {
     idle: "Valmiustilassa",
@@ -1072,7 +1074,8 @@ var SLOTS = [
   "mileage",
   "continue",
   "cancel",
-  "picture"
+  "picture",
+  "last_task"
 ];
 var NONE = "none";
 
@@ -1095,7 +1098,8 @@ var SLOT_DOMAINS = {
   mileage: ["sensor"],
   continue: ["button"],
   cancel: ["button"],
-  picture: ["image"]
+  picture: ["image"],
+  last_task: ["sensor", "input_datetime"]
 };
 var GENERIC = {
   battery: (entity) => domain(entity.entity_id) === "sensor" && entity.attributes.device_class === "battery",
@@ -2554,6 +2558,10 @@ var MowerStatusCard = class extends i4 {
   }
   /** When it last mowed, or how long the history goes back without a mowing in it, so a shorter history isn't overstated. */
   lastMowedText() {
+    const own = errorTime(this.slotState("last_task"));
+    if (own !== null) {
+      return this.markup(this.robotKey("common.last_mowed"), { when: this.whenMarkup(own) });
+    }
     if (!this.lastMowed) {
       return null;
     }

@@ -28,7 +28,7 @@ import type { HassEntity, HomeAssistant } from "./hass";
 import { gridMinRows, heightCardSize, heightStyle, validHeight } from "./height";
 import { drawnScale, fillLimit, filledHeight, filledStyle, spareRoom, validRowStep } from "./rows";
 import { browserLanguage, translate, translateOwn } from "./localize/localize";
-import { hasTask, lastMowingEnd, lastMowingStart, mainAction, mammotionPictures, minutesOf, notices, numberOf } from "./mower";
+import { errorTime, hasTask, lastMowingEnd, lastMowingStart, mainAction, mammotionPictures, minutesOf, notices, numberOf } from "./mower";
 import type { MainAction } from "./mower";
 import { activityOf, domain, platformOf, presetOf, resolveSlots } from "./slots";
 import type { Preset } from "./slots";
@@ -1173,6 +1173,12 @@ export class MowerStatusCard extends LitElement {
 
     /** When it last mowed, or how long the history goes back without a mowing in it, so a shorter history isn't overstated. */
     private lastMowedText(): string | TemplateResult | null {
+        // A time of its own, such as a sensor of when a Spino last left its charger, as it is out of reach while it cleans
+        // and its history never shows it cleaning.
+        const own = errorTime(this.slotState("last_task"));
+        if (own !== null) {
+            return this.markup(this.robotKey("common.last_mowed"), { when: this.whenMarkup(own) });
+        }
         if (!this.lastMowed) {
             return null;
         }

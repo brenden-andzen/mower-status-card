@@ -116,7 +116,8 @@
         "mileage": "Kokonaismatka",
         "continue": "Jatka tehtävää -painike",
         "cancel": "Peru tehtävä -painike",
-        "picture": "Kuva"
+        "picture": "Kuva",
+        "last_task": "Viimeisimmän tehtävän aika"
     },
     "state": {
         "idle": "Valmiustilassa",

@@ -200,6 +200,21 @@ describe("a vacuum, such as Mammotion's Spino pool cleaner", () => {
         expect(fired.mock.calls[0][0]).toEqual(navigate);
     });
 
+    it("says when it last cleaned from a last_task time of its own, as its history never shows it cleaning", async () => {
+        const state = spino({ "vacuum.pip": { state: "idle" }, "sensor.pip_status": { state: "PREPARE" } });
+        const at = new Date(Date.now() - 2 * 3_600_000).toISOString();
+        state.states["sensor.pip_last_clean"] = {
+            entity_id: "sensor.pip_last_clean",
+            state: at,
+            attributes: { device_class: "timestamp" },
+            last_changed: at,
+            last_updated: at,
+            context: { id: "", parent_id: null, user_id: null },
+        } as HassEntity;
+        const element = await card(state, { entities: { last_task: "sensor.pip_last_clean" } });
+        expect(text(element.shadowRoot!.querySelector(".lines"))).toContain("Last cleaned");
+    });
+
     it("shows a Spino idle off its charger as idle", async () => {
         const element = await card(spino({ "vacuum.pip": { state: "idle" }, "binary_sensor.pip_charging": { state: "off" } }));
         expect(text(element.shadowRoot!.querySelector(".state"))).toBe("Idle");

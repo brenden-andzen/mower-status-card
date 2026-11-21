@@ -36,6 +36,7 @@ export const SLOT_DOMAINS: Record<Slot, string[]> = {
     continue: ["button"],
     cancel: ["button"],
     picture: ["image"],
+    last_task: ["sensor", "input_datetime"],
 };
 
 /** What any integration's entity is, by Home Assistant's own device classes and domains. */

@@ -21,6 +21,7 @@ export const SLOTS = [
     "continue",
     "cancel",
     "picture",
+    "last_task",
 ] as const;
 
 export type Slot = (typeof SLOTS)[number];

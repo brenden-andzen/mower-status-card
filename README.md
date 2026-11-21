@@ -193,6 +193,8 @@ layout tab may need raising by hand.
 
 A cleaner Home Assistant has as a `vacuum` gets the same card, in its own words. It cleans rather than mows, and its last cleaning shows from the history as "Last cleaned yesterday at 3:18 PM". The large button starts cleaning, sends it back to its dock while it cleans when it can't pause, and continues while it returns. Idle on its charger it reads as docked, as the Spino reports docked only while it docks. Its actions are the vacuum's own, such as `vacuum.start` and `vacuum.return_to_base`.
 
+A cleaner that goes out of reach while it cleans, as the Spino does underwater, never shows cleaning in its history, so the card can't tell when it last cleaned. Give it a time of its own as the `last_task` entity, a timestamp sensor or an `input_datetime`, such as when it last left its charger for long enough to have cleaned, and the card shows "Last cleaned" from that instead.
+
 A cleaner with modes to choose from, a vacuum's fan speeds, gets them as a row of buttons above the notices, the mode it cleans in now filled. Choosing a mode cleans in it through `vacuum.set_fan_speed`, so the card asks first when the cleaner isn't already cleaning. A mode reads in Home Assistant's words where it has them, otherwise in the integration's own or its name tidied.
 
 For a [Mammotion](https://github.com/mikey0000/Mammotion-HA) Spino the card finds the battery, charging, the last error with its time and the firmware by their translation keys. Its modes, All, Floor, Wall, Eco and Waterline, read in Mammotion's own words from its cleaning mode sensor, and its RECHARGE mode is left to the dock button. An integration's vacuum preset lives in `src/slots.ts` under `<platform>_vacuum`, apart from its mowers'.
